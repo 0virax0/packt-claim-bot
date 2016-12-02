@@ -9,3 +9,18 @@ Get your daily free book automatically using this bot on Packt
 * Enjoy
 
 If you want to change your credentials or something goes wrong you have to delete BOTH "login.passwd" and "cookie.txt"
+# Compile from source
+You need some libraries to be available in your system:
+* Libcurl
+* Htmlstreamparser-0.4
+* Openssl
+* Zlib
+
+### Ubuntu dynamic link example
+```bash
+gcc main.c $(pkg-config --libs --cflags libcurl) -lssl -lhtmlstreamparser -o BOTpkt
+```
+### Windows static link example using MinGW
+```cmd
+gcc main.c -static $(/local/bin/curl-config --static-libs --cflags) -lssl -lhtmlstreamparser -o BOTpkt
+```
