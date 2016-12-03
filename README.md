@@ -1,6 +1,12 @@
 # packt-claim-bot
 Get your daily free book automatically using this bot on Packt
 # Istructions:
+###In Linux:
+```bash
+crontab -e
+mm hh * * * /path_to/packt-claim-bot/bin/BOTpkt
+```
+###In Windows:
 * Place this directory where you prefer and leave it there
 * Start BOTpkt.exe for the first configuration
 * Start up Task Scheduler, create a new task specifying either BOTpkt.exe or start_silently if you want no prompt.
