@@ -18,6 +18,7 @@ You need some libraries to be available in your system:
 
 ### Ubuntu dynamic link example
 ```bash
+export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
 gcc main.c $(pkg-config --libs --cflags libcurl) -lssl -lhtmlstreamparser -o BOTpkt
 ```
 ### Windows static link example using MinGW
