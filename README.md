@@ -12,7 +12,7 @@ If you want to change your credentials or something goes wrong you have to delet
 # Compile from source
 You need some libraries to be available in your system:
 * Libcurl
-* Htmlstreamparser-0.4
+* [Htmlstreamparser-0.4](http://code.google.com/p/htmlstreamparser/)
 * Openssl
 * Zlib
 
