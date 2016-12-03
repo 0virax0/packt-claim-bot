@@ -171,7 +171,7 @@ int suc=0;
       break;
       case 'd':
       case 'D':
-        *download = argv[i][0]=='y';
+        *download = optarg[0]=='y';
       break;
       default:
         return 0;
@@ -219,7 +219,7 @@ int main(int argc, char *argv[]){
 //Download certificates
        FILE *fp;
     #ifdef __linux__
-       readlink(“/proc/self/exe”, path, sizeof(path));
+       readlink("/proc/self/exe", path, sizeof(path));
     #elif _WIN32
        _fullpath(path, argv[0], strlen(argv[0])+1);
     #endif
