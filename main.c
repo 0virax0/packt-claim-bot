@@ -152,12 +152,12 @@ static CURLcode sslctx_function(CURL * curl, void * sslctx, void * parm){
        fclose(fp);
        return CURLE_OK;
 }
-int init(int argc, char *argv[], char* location, char* login, char* passwd, int* download){
+int init(int argc, char *argv[], char* location, char* login, char* passwd, int* download, int* silent){
 int suc=0;
 #ifdef __linux__
   int opt;
-  while ((opt = getopt(argc, argv, "l:p:d:")) != -1) {
-    if(!optarg) return 0; //it has to have an argument
+  while ((opt = getopt(argc, argv, "l:p:d:s")) != -1) {
+    //  if(stArg) return 0; //expected argument after parameter
     switch (opt) {
       case 'l':
       case 'L':
@@ -173,6 +173,10 @@ int suc=0;
       case 'D':
         *download = optarg[0]=='y';
       break;
+      case 's':
+      case 'S':
+        *silent = optarg[0]=='y';
+      break;
       default:
         return 0;
     }
@@ -182,7 +186,7 @@ int suc=0;
   int i = 1, stArg=0, firCh=0;
   for (; i<argc; i++){
     if(argv[i][0]=='/'){
-      if(stArg) return 0; //expected argument after parameter
+      //if(stArg) return 0; //expected argument after parameter
       stArg = argv[i][1];
     }else if(stArg){
       //parse argument
@@ -201,6 +205,10 @@ int suc=0;
         case 'D':
           *download = argv[i][0]=='y';
         break;
+        case 's':
+        case 'S':
+          *silent = argv[i][0]=='y';
+        break;
         default:
           return 0;
       }
@@ -212,7 +220,8 @@ int suc=0;
 }
 int main(int argc, char *argv[]){
     CURL *curl;
-
+    char login[128]="", passw[128]="";
+    int a=0, b=0; int *download = &a, *silent= &b;
     curl_global_init(CURL_GLOBAL_ALL);
     curl = curl_easy_init();
     if(curl){
@@ -229,10 +238,8 @@ int main(int argc, char *argv[]){
        strcat (path,"cacert.pem");
 
        //init logpassw
-       char login[128]="", passw[128]="";
-       int a=0; int *download = &a;
-       if(!init(argc, argv, basePath, login, passw, download)){
-         fprintf(stderr, "Usage: %s [-l login] [-p password] [-d y|n]\n", argv[0]);
+       if(!init(argc, argv, basePath, login, passw, download, silent)){
+         fprintf(stderr, "Usage: %s [-l login] [-p password] [-d y|n](download book) [-s y|n](silent mode)\n", argv[0]);
          return -1;
        }
 
@@ -314,5 +321,5 @@ int main(int argc, char *argv[]){
     }
 
     curl_global_cleanup();
-    if((argc>1 && !strlen(title))||argc == 1)system("pause"); //if started minimized close soon after
+    if((*silent && !strlen(title))||!*silent)system("pause");
 }
