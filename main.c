@@ -9,7 +9,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-char href[256], formID[256], path[256] = "", title[512] = "", href_book[256] = "";
+char href[256]="", formID[256]="", path[256] = "", title[512] = "", href_book[256] = "";
 
 size_t disable_write(void *buffer, size_t size, size_t nmemb, void *userp){
    return size * nmemb;
@@ -20,6 +20,7 @@ size_t write_data(void *ptr, size_t size, size_t nmemb, FILE *stream) {
 }
 size_t parse_href(void *buffer, size_t size, size_t nmemb, FILE *hsp) {
     size_t realsize = size * nmemb, p;
+    if(strlen(href)>0 && strlen(formID)>0) return realsize; //quit if already found
     char tmpHr[128], tmpId[128];
     int watchForId = 0 ;
     for(p = 0; p < realsize; p++) {
@@ -117,8 +118,7 @@ int request(CURL *curl){
        }
        return 1;
 }
-static CURLcode sslctx_function(CURL * curl, void * sslctx, void * parm)
-{
+static CURLcode sslctx_function(CURL * curl, void * sslctx, void * parm){
        FILE *fp;
        //reopen the file for reading
        fp = fopen(path, "r+");
@@ -152,53 +152,63 @@ static CURLcode sslctx_function(CURL * curl, void * sslctx, void * parm)
        fclose(fp);
        return CURLE_OK;
 }
-int init(char* location, char* login, char* passwd, char* download){
-  FILE *fp;
-  char fileN[128];
-  strcpy(fileN, location);
-  strcat(fileN, "login.psswd");
-
-//check if file exists
-  struct stat st;
-  int result = stat(fileN, &st);
-  if( result==0 ) {
-    // file exists then load
-    char tmp[128];
-    fp = fopen(fileN, "r+");
-     while(fgets (tmp, 128, fp)!=NULL ){
-       if(!strlen(login)){
-         strcpy(login, tmp);
-         login[strlen(login)-1]='\0';
-       }else if(!strlen(passwd)){
-         strcpy(passwd, tmp);
-         passwd[strlen(passwd)-1]='\0';
-       }else if(!strlen(download)){
-         strcpy(download, tmp);
-         download[strlen(download)-1]='\0';
-       }
-     }
-     if(!strlen(tmp)) printf("error: file exists but is empty\n");
-     fclose(fp);
-  } else {
-      // file doesn't exist than create it
-      char c;
-      do{
-        printf("Welcome\ninsert your e-mail and options:\n");
-        scanf("%s",login);
-        printf("insert your password:\n");
-        scanf("%s",passwd);
-
-        printf("Enable automatic book download? [s/n]:\n");
-        scanf("%s",download);
-        fp = fopen(fileN, "wb");
-        fprintf(fp,"%s\n%s\n%s\n",login, passwd, download);
-        fclose(fp);
-        printf("is all ok? (to reset delete login.psswd file) [s/n]\n");
-        scanf("%c\n",&c);
-      }while(c == 's');
+int init(int argc, char *argv[], char* location, char* login, char* passwd, int* download){
+int suc=0;
+#ifdef __linux__
+  int opt;
+  while ((opt = getopt(argc, argv, "l:p:d:")) != -1) {
+    if(!optarg) return 0; //it has to have an argument
+    switch (opt) {
+      case 'l':
+      case 'L':
+        suc |= 1;
+        strcpy(login, optarg);
+      break;
+      case 'p':
+      case 'P':
+        suc |= 2;
+        strcpy(passwd, optarg);
+      break;
+      case 'd':
+      case 'D':
+        *download = argv[i][0]=='y';
+      break;
+      default:
+        return 0;
+    }
   }
-
-  return 1;
+#elif _WIN32
+  //manually parse win arguments
+  int i = 1, stArg=0, firCh=0;
+  for (; i<argc; i++){
+    if(argv[i][0]=='/'){
+      if(stArg) return 0; //expected argument after parameter
+      stArg = argv[i][1];
+    }else if(stArg){
+      //parse argument
+      switch (stArg) {
+        case 'l':
+        case 'L':
+          suc |= 1;
+          strcpy(login, argv[i]);
+        break;
+        case 'p':
+        case 'P':
+          suc |= 2;
+          strcpy(passwd, argv[i]);
+        break;
+        case 'd':
+        case 'D':
+          *download = argv[i][0]=='y';
+        break;
+        default:
+          return 0;
+      }
+      stArg = 0;
+    }
+  }
+#endif
+  return suc==3;
 }
 int main(int argc, char *argv[]){
     CURL *curl;
@@ -208,15 +218,23 @@ int main(int argc, char *argv[]){
     if(curl){
 //Download certificates
        FILE *fp;
+    #ifdef __linux__
+       readlink(“/proc/self/exe”, path, sizeof(path));
+    #elif _WIN32
        _fullpath(path, argv[0], strlen(argv[0])+1);
-       while(path[strlen(path)-1]!='\\' && path[strlen(path)-1]!='/') path[strlen(path)-1] = '\0';
+    #endif
+       while(path[strlen(path)-1]!='\\' && path[strlen(path)-1]!='/') path[strlen(path)-1] = '\0';  //remove executable name
        char basePath[128];
        strcpy(basePath,path);
        strcat (path,"cacert.pem");
 
        //init logpassw
-       char login[128]="", passw[128]="", download[128]="";
-       init(basePath, login, passw, download);
+       char login[128]="", passw[128]="";
+       int a=0; int *download = &a;
+       if(!init(argc, argv, basePath, login, passw, download)){
+         fprintf(stderr, "Usage: %s [-l login] [-p password] [-d y|n]\n", argv[0]);
+         return -1;
+       }
 
         //---save ca certificates in exe location
        fp = fopen(path, "wb");
@@ -270,11 +288,15 @@ int main(int argc, char *argv[]){
        curl_easy_setopt(curl, CURLOPT_URL, href);
        if(!request(curl))return 0;
        //check success
-       if(strlen(title)) {system("color 02"); printf("Login successful\nBook successfully acquired: %s\n", title);}
-       else {system("color 04"); printf("ERROR: login wasn't successful, try changing the login.psswd file or deleting cookie.txt\n");}
-
+    #ifdef __linux__
+       if(strlen(title)) {printf("\x1B[32mLogin successful\nBook successfully acquired: %s\n", title);}
+       else {printf("\x1B[31mERROR: login wasn't successful, try changing the login.psswd file or deleting cookie.txt\n");}
+    #elif _WIN32
+      if(strlen(title)) {system("color 02"); printf("Login successful\nBook successfully acquired: %s\n", title);}
+      else {system("color 04"); printf("ERROR: login wasn't successful, try changing the login.psswd file or deleting cookie.txt\n");}
+    #endif
 //download Book
-      if(download[0]=='s'){
+      if(*download){
         printf("Downloading pdf\n");
         char tmpPath[128]; strcpy(tmpPath,basePath); strcat(tmpPath,strcat(title,".pdf"));
         fp = fopen(tmpPath, "wb");
