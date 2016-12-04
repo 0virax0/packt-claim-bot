@@ -294,7 +294,7 @@ int main(int argc, char *argv[]){
        else {printf("\x1B[31mERROR: login wasn't successful, try changing the login.psswd file or deleting cookie.txt\n");}
     #elif _WIN32
       if(strlen(title)) {system("color 02"); printf("Login successful\nBook successfully acquired: %s\n", title);}
-      else {system("color 04"); printf("ERROR: login wasn't successful, try changing the login.psswd file or deleting cookie.txt\n");}
+      else {system("color 04"); printf("ERROR: login wasn't successful, try deleting cookie.txt\n");}
     #endif
 //download Book
       if(*download){
@@ -315,5 +315,10 @@ int main(int argc, char *argv[]){
     }
 
     curl_global_cleanup();
-    if((*silent && !strlen(title))||!*silent)system("pause");
+    if((*silent && !strlen(title))||!*silent)
+  #ifdef __linux__
+    getchar();
+  #elif _WIN32
+    system("pause");
+  #endif
 }
