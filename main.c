@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <ctype.h>
 
 char href[256]="", formID[256]="", path[256] = "", title[512] = "", href_book[256] = "";
 
@@ -157,25 +158,20 @@ int suc=0;
 #ifdef __linux__
   int opt;
   while ((opt = getopt(argc, argv, "l:p:d:s")) != -1) {
-    //  if(stArg) return 0; //expected argument after parameter
-    switch (opt) {
+    switch (tolower(opt)) {
       case 'l':
-      case 'L':
         suc |= 1;
         strcpy(login, optarg);
       break;
       case 'p':
-      case 'P':
         suc |= 2;
         strcpy(passwd, optarg);
       break;
       case 'd':
-      case 'D':
         *download = optarg[0]=='y';
       break;
       case 's':
-      case 'S':
-        *silent = optarg[0]=='y';
+        *silent = 1;
       break;
       default:
         return 0;
@@ -183,31 +179,29 @@ int suc=0;
   }
 #elif _WIN32
   //manually parse win arguments
-  int i = 1, stArg=0, firCh=0;
+  int i = 1, stArg=0;
   for (; i<argc; i++){
     if(argv[i][0]=='/'){
-      //if(stArg) return 0; //expected argument after parameter
-      stArg = argv[i][1];
+      stArg = tolower(argv[i][1]);
+      //arguments without parameters
+      switch(stArg){
+        case 's':
+          *silent = 1;
+        break;
+      }
     }else if(stArg){
       //parse argument
       switch (stArg) {
         case 'l':
-        case 'L':
           suc |= 1;
           strcpy(login, argv[i]);
         break;
         case 'p':
-        case 'P':
           suc |= 2;
           strcpy(passwd, argv[i]);
         break;
         case 'd':
-        case 'D':
           *download = argv[i][0]=='y';
-        break;
-        case 's':
-        case 'S':
-          *silent = argv[i][0]=='y';
         break;
         default:
           return 0;
@@ -239,7 +233,7 @@ int main(int argc, char *argv[]){
 
        //init logpassw
        if(!init(argc, argv, basePath, login, passw, download, silent)){
-         fprintf(stderr, "Usage: %s [-l login] [-p password] [-d y|n](download book) [-s y|n](silent mode)\n", argv[0]);
+         fprintf(stderr, "Usage: %s [-l login] [-p password] [-d y|n](download book) [-s](silent mode)\n", argv[0]);
          return -1;
        }
 
