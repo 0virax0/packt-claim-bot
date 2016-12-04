@@ -1,20 +1,26 @@
 # packt-claim-bot
 Get your daily free book automatically using this bot on Packt
 # Istructions:
+usage:
+```bash
+BOTpackt [-l <login>] [-p <password>] [-d y|n] [-s]
+```
+**-d** you can automatically download the ebook in the .pdf format as soon as it claims it
+
+**-s** the program returns immediately after
 ###In Linux:
 ```bash
 crontab -e
 mm hh * * * /path_to/packt-claim-bot/bin/BOTpkt
 ```
 ###In Windows:
-* Place this directory where you prefer and leave it there
-* Start BOTpkt.exe for the first configuration
-* Start up Task Scheduler, create a new task specifying either BOTpkt.exe or start_silently if you want no prompt.
+* Create a .bat executable like the one provided and put in the same folder as the bot
+* Start up Task Scheduler, create a new task specifying the .bat file
 	 Specify an hour at which start daily and don't forget to enable the 
          ["Run task as soon as possible after a scheduled start is missed" option]
 * Enjoy
 
-If you want to change your credentials or something goes wrong you have to delete BOTH "login.passwd" and "cookie.txt"
+If you use different credentials don't forget to remove the cookie.txt file
 # Compile from source
 You need some libraries to be available in your system:
 * Libcurl
@@ -25,7 +31,7 @@ You need some libraries to be available in your system:
 ### Ubuntu dynamic link example
 ```bash
 export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
-gcc main.c $(pkg-config --libs --cflags libcurl) -lssl -lhtmlstreamparser -o BOTpkt
+gcc main.c $(pkg-config --libs --cflags libcurl) -lcrypto -lssl -lhtmlstreamparser -o BOTpkt
 ```
 ### Windows static link example using MinGW
 ```cmd
