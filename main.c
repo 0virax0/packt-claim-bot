@@ -181,7 +181,7 @@ int suc=0;
   //manually parse win arguments
   int i = 1, stArg=0;
   for (; i<argc; i++){
-    if(argv[i][0]=='/'){
+    if(argv[i][0]=='-'){
       stArg = tolower(argv[i][1]);
       //arguments without parameters
       switch(stArg){
